@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Stadium Tracker 🏟️</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-baseball-ball"></i>
+                <h1>MLB Stadium Tracker</h1>
+            </div>
+            <div class="header-actions">
+                <div id="userInfo" class="user-info hidden">
+                    <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
+                    <span id="userName"></span>
+                    <button onclick="signOutUser()" class="btn btn-outline">Sign Out</button>
+                </div>
+                <button onclick="signInUser()" id="signInBtn" class="btn btn-primary">
+                    <i class="fab fa-google"></i> Sign In with Google
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== HERO / STATS BAR ========== -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-trophy"></i>
+                <div>
+                    <span class="stat-number" id="totalStadiums">30</span>
+                    <span class="stat-label">Total Stadiums</span>
+                </div>
+            </div>
+            <div class="stat-card highlight">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <span class="stat-number" id="visitedCount">0</span>
+                    <span class="stat-label">Your Visited</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <div>
+                    <span class="stat-number" id="remainingCount">30</span>
+                    <span class="stat-label">Remaining</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-percentage"></i>
+                <div>
+                    <span class="stat-number" id="percentComplete">0%</span>
+                    <span class="stat-label">Complete</span>
+                </div>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <span class="progress-text" id="progressText">0 of 30 stadiums visited</span>
+        </div>
+    </section>
+
+    <!-- ========== MAIN NAVIGATION TABS ========== -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="showTab('stadiums')">
+            <i class="fas fa-th-large"></i> Stadiums
+        </button>
+        <button class="tab-btn" onclick="showTab('map')">
+            <i class="fas fa-map"></i> Map
+        </button>
+        <button class="tab-btn" onclick="showTab('leaderboard')">
+            <i class="fas fa-medal"></i> Leaderboard
+        </button>
+        <button class="tab-btn" onclick="showTab('photos')">
+            <i class="fas fa-images"></i> Photo Gallery
+        </button>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content">
+
+        <!-- ===== STADIUMS TAB ===== -->
+        <section id="tab-stadiums" class="tab-content active">
+            <div class="section-header">
+                <h2>All 30 MLB Stadiums</h2>
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterStadiums('all')">All</button>
+                    <button class="filter-btn" onclick="filterStadiums('visited')">Visited</button>
+                    <button class="filter-btn" onclick="filterStadiums('unvisited')">Not Yet</button>
+                    <select id="leagueFilter" onchange="filterByLeague(this.value)" class="select-filter">
+                        <option value="all">All Leagues</option>
+                        <option value="AL">American League</option>
+                        <option value="NL">National League</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stadiums-grid" id="stadiumsGrid">
+                <!-- Dynamically generated -->
+            </div>
+        </section>
+
+        <!-- ===== MAP TAB ===== -->
+        <section id="tab-map" class="tab-content">
+            <div class="map-container">
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot visited-dot"></span> Visited
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot unvisited-dot"></span> Not Yet Visited
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+        </section>
+
+        <!-- ===== LEADERBOARD TAB ===== -->
+        <section id="tab-leaderboard" class="tab-content">
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <h2><i class="fas fa-trophy"></i> Stadium Leaderboard</h2>
+                    <p>See who has visited the most MLB stadiums!</p>
+                </div>
+                <div id="leaderboardList" class="leaderboard-list">
+                    <!-- Dynamically generated -->
+                </div>
+                <div class="leaderboard-stats-grid" id="leaderboardStats">
+                    <!-- Team comparison stats -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PHOTO GALLERY TAB ===== -->
+        <section id="tab-photos" class="tab-content">
+            <div class="gallery-header">
+                <h2><i class="fas fa-images"></i> Stadium Photo Gallery</h2>
+                <p>All the memories from our stadium visits!</p>
+            </div>
+            <div class="gallery-filters">
+                <select id="galleryStadiumFilter" onchange="filterGallery(this.value)" class="select-filter">
+                    <option value="all">All Stadiums</option>
+                </select>
+                <select id="galleryUserFilter" onchange="filterGalleryByUser(this.value)" class="select-filter">
+                    <option value="all">All Users</option>
+                </select>
+            </div>
+            <div class="photo-grid" id="photoGrid">
+                <!-- Dynamically generated -->
+            </div>
+            <div id="noPhotos" class="no-content hidden">
+                <i class="fas fa-camera"></i>
+                <p>No photos yet! Visit a stadium and upload some memories.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========== STADIUM MODAL ========== -->
+    <div id="stadiumModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="modal-header" id="modalHeader">
+                <div class="modal-team-logo" id="modalTeamColor">
+                    <i class="fas fa-baseball-ball"></i>
+                </div>
+                <div class="modal-title-info">
+                    <h2 id="modalStadiumName"></h2>
+                    <p id="modalTeamName"></p>
+                    <p id="modalLocation"><i class="fas fa-map-marker-alt"></i> <span></span></p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-info-grid">
+                    <div class="info-item">
+                        <label>Opened</label>
+                        <span id="modalOpened"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Capacity</label>
+                        <span id="modalCapacity"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>League</label>
+                        <span id="modalLeague"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Division</label>
+                        <span id="modalDivision"></span>
+                    </div>
+                </div>
+
+                <!-- Visit Toggle -->
+                <div class="visit-section" id="visitSection">
+                    <div id="loginPrompt" class="login-prompt hidden">
+                        <i class="fas fa-lock"></i>
+                        <p>Sign in to mark stadiums as visited!</p>
+                    </div>
+                    <div id="visitControls" class="hidden">
+                        <button id="visitToggleBtn" class="btn btn-large" onclick="toggleVisit()">
+                            <i class="fas fa-check"></i> Mark as Visited
+                        </button>
+                        <div id="visitDateSection" class="visit-date hidden">
+                            <label>Visit Date:</label>
+                            <input type="date" id="visitDate" class="date-input">
+                            <button onclick="saveVisitDate()" class="btn btn-small">Save Date</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photo Upload Section -->
+                <div class="photo-upload-section" id="photoUploadSection">
+                    <h3><i class="fas fa-camera"></i> Your Photos</h3>
+                    <div id="modalPhotos" class="modal-photo-grid">
+                        <!-- Photos load here -->
+                    </div>
+                    <div id="uploadArea" class="upload-area hidden">
+                        <label for="photoUpload" class="upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Click to upload photos</span>
+                            <small>JPG, PNG, GIF up to 5MB each</small>
+                        </label>
+                        <input type="file" id="photoUpload" accept="image/*" multiple onchange="uploadPhotos(event)">
+                        <div class="upload-caption">
+                            <input type="text" id="photoCaption" placeholder="Add a caption (optional)" class="caption-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visitors Section -->
+                <div class="visitors-section">
+                    <h3><i class="fas fa-users"></i> Who's Been Here</h3>
+                    <div id="stadiumVisitors" class="visitors-list">
+                        <!-- Dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== PHOTO LIGHTBOX ========== -->
+    <div id="lightbox" class="lightbox hidden">
+        <div class="lightbox-overlay" onclick="closeLightbox()"></div>
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="lightbox-prev" onclick="lightboxPrev()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <img id="lightboxImg" src="" alt="Stadium Photo">
+            <button class="lightbox-next" onclick="lightboxNext()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="lightbox-info">
+                <p id="lightboxCaption"></p>
+                <p id="lightboxMeta"></p>
+                <button id="lightboxDelete" class="btn btn-danger btn-small hidden" onclick="deletePhoto()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TOAST NOTIFICATION ========== -->
+    <div id="toast" class="toast hidden">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- ========== LOADING OVERLAY ========== -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-baseball-ball fa-spin"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- Leaflet Map JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+
+</body>
+</html>
